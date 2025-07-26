@@ -6,30 +6,48 @@ st.set_page_config(page_title="SmartSize", layout="centered")
 st.title("📷 SmartSize – Intelligent Photo Resizer")
 st.write("Resize your image to the ideal format with just one click.")
 
-# Available options
-options = {
-    "Wallpaper (16:10)": (1280, 800),
-    "Profile (1:1)": (400, 400),
-    "LinkedIn Profile Photo (400x400)": (400, 400),
-    "LinkedIn Cover Photo (1584x396)": (1584, 396),
-    "Passport (600x600)": (600, 600),
-    "Presentation Slide (16:9)": (1280, 720),
-    "Custom Size": None
+format_presets_by_region = {
+    "Universal": {
+        "LinkedIn Profile (400x400)": (400, 400),
+        "LinkedIn Cover (1584x396)": (1584, 396),
+        "Instagram Post (1080x1080)": (1080, 1080),
+        "Instagram Story (1080x1920)": (1080, 1920),
+        "YouTube Thumbnail (1280x720)": (1280, 720),
+        "Presentation Slide (16:9)": (1280, 720),
+        "Wallpaper (16:10)": (1920, 1200),
+        "Profile (1:1)": (1000, 1000),
+    },
+    "Brazil": {
+        "RG (Brasil - 700x1000)": (700, 1000),
+        "CNH (Brasil - 1200x800)": (1200, 800),
+    },
+    "USA": {
+        "Passport (US - 600x600)": (600, 600),
+        "Driver License (US - 1280x800)": (1280, 800),
+    },
+    "Devices": {
+        "iPhone 15 Pro Max": (1290, 2796),
+        "iPad Pro 12.9\"": (2048, 2732),
+        "Macbook Pro 16\"": (3456, 2234),
+        "Galaxy S24 Ultra": (1440, 3120),
+    },
+    "Custom": {
+        "Custom Size": None,
+    }
 }
 
-# Upload
-uploaded_file = st.file_uploader("Upload your image", type=["png", "jpg", "jpeg"])
+region = st.selectbox("Choose format category", list(format_presets_by_region.keys()))
+selected_format = st.selectbox("Choose the target use", list(format_presets_by_region[region].keys()))
 
-# Format selection
-target_label = st.selectbox("Choose the target use", list(options.keys()))
+if selected_format == "Custom Size":
+    width = st.number_input("Target width (px)", min_value=100, max_value=4000, value=800)
+    height = st.number_input("Target height (px)", min_value=100, max_value=4000, value=600)
+else:
+    width, height = format_presets_by_region[region][selected_format]
 
-# Resize mode
 adjustment_mode = st.radio("Resize mode", ["With blurred background", "Crop proportionally (no background)"])
 
-custom_width, custom_height = None, None
-if target_label == "Custom Size":
-    custom_width = st.number_input("Target width (px)", min_value=100, max_value=4000, value=800)
-    custom_height = st.number_input("Target height (px)", min_value=100, max_value=4000, value=600)
+uploaded_file = st.file_uploader("Upload your image", type=["png", "jpg", "jpeg"])
 
 def adjust_image(image: Image.Image, size: tuple[int, int], mode: str) -> Image.Image:
     orig_w, orig_h = image.size
@@ -45,7 +63,6 @@ def adjust_image(image: Image.Image, size: tuple[int, int], mode: str) -> Image.
         bottom = top + target_h
         cropped = resized.crop((left, top, right, bottom))
         return cropped
-
     else:
         background = image.copy().resize((target_w, target_h), Image.Resampling.LANCZOS).filter(ImageFilter.GaussianBlur(20))
         ratio = min(target_w / orig_w, target_h / orig_h)
@@ -56,15 +73,9 @@ def adjust_image(image: Image.Image, size: tuple[int, int], mode: str) -> Image.
         background.paste(resized, (x_offset, y_offset))
         return background
 
-# Processing
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
-
-    if target_label == "Custom Size":
-        target_size = (custom_width, custom_height)
-    else:
-        target_size = options[target_label]
-
+    target_size = (width, height)
     result = adjust_image(image, target_size, adjustment_mode)
     st.image(result, caption="Resized Image", use_column_width=True)
 
