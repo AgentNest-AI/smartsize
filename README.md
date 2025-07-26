@@ -13,7 +13,7 @@ Whether you're setting a wallpaper, uploading a LinkedIn profile photo, or prepa
 - Slides and presentation visuals
 - Any custom size you define
 
-## 🚀 How to Use
+## 🚀 How to Use:
 
 ```bash
 pip install -r requirements.txt
